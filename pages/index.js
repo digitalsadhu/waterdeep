@@ -1,65 +1,81 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import Head from 'next/head';
+import dynamic from 'next/dynamic';
+import styles from '../styles/Home.module.css';
+import sanity from '@sanity/client';
+import imageUrlBuilder from '@sanity/image-url'
 
-export default function Home() {
+const client = sanity({
+    projectId: 'egyeqt5c',
+    dataset: 'production',
+    token: '', // or leave blank to be anonymous user
+    useCdn: true // `false` if you want to ensure fresh data
+});
+
+const builder = imageUrlBuilder(client);
+
+function urlFor(source) {
+    return builder.image(source);
+}
+
+const Map = dynamic(() => import('../components/map'), { ssr: false });
+
+export default function Home(props) {
   return (
     <div className={styles.container}>
       <Head>
         <title>Create Next App</title>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossOrigin=""/>
       </Head>
-
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+        <Map {...props} />
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
     </div>
   )
+}
+
+export async function getStaticProps() {
+  const locations = await client.fetch(`
+      *[_type == "location"]{
+          _id,
+          name,
+          description,
+          story,
+          image,
+          location,
+          characters[]->{
+            _id,
+            name,
+            player->,
+            short,
+            image,
+            race->,
+            class->,
+            subclass->,
+            labels[]->,
+            pc,
+            description,
+          },
+          labels[]->
+      }`
+  );
+  return {
+    props: {
+      locations: locations.map(location => {
+        if (location.image) {
+          location.image = urlFor(location.image).width(500).url();
+        }
+        if (location.characters) {
+          location.characters.map(character => {
+            if (character.image) {
+              character.image = urlFor(character.image).width(80).url();
+            }
+          });
+        }
+        return location;
+      }),
+    },
+  }
 }
