@@ -36,7 +36,7 @@ export default function Home(props) {
   )
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   const locations = await client.fetch(`
       *[_type == "location"]{
           _id,
