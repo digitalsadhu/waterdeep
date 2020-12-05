@@ -67,9 +67,9 @@ export async function getServerSideProps() {
         if (location.image) {
           location.image = urlFor(location.image).width(500).url();
         }
-        if (location.characters) {
+        if (Array.isArray(location.characters)) {
           location.characters.map(character => {
-            if (character.image) {
+            if (character && character.image) {
               character.image = urlFor(character.image).width(80).url();
             }
           });

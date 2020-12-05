@@ -31,6 +31,17 @@ function Label({ label }) {
     )
 }
 
+function Characters({ characters }) {
+    if (Array.isArray(characters)) {
+        return (
+            <ul>
+                {characters.map((character) => (<Character key={character._id} character={character} />))}
+            </ul>
+        )
+    }
+    return null;
+}
+
 function Character({ character }) {
     const { name, short, description, labels, race, pc, player, image } = character;
     const playerInfo = pc ? ` (player: ${player.name})` : null;
@@ -48,15 +59,12 @@ function Character({ character }) {
 }
  
 function LocationMarker({ location }) {
-    console.log(location.description)
     return (
         <Marker position={[location.location.lat, location.location.lng]}>
             <Popup maxWidth="auto">
                 <h2>{location.name}</h2>
                 <section className="location-labels">
-                    <ul>
-                        {location.labels.map((label) => (<Label key={label._id} label={label} />))}
-                    </ul>
+                    <Labels labels={location.labels} />
                 </section>
                 <section className="location-image">
                     <img src={location.image} />
@@ -79,9 +87,7 @@ function LocationMarker({ location }) {
                     </TabPanel>
                     <TabPanel>
                         <section className="location-characters">
-                            <ul>
-                                {location.characters.map((character) => (<Character key={character._id} character={character} />))}
-                            </ul>
+                            <Characters characters={location.characters} />
                         </section>
                     </TabPanel>
                 </Tabs>
